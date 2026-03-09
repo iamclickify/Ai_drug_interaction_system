@@ -1,0 +1,31 @@
+drug_name,smiles,drug_class,category
+Aspirin,CC(=O)OC1=CC=CC=C1C(=O)O,NSAID,Analgesic
+Ibuprofen,CC(C)CC1=CC=C(C=C1)C(C)C(=O)O,NSAID,Analgesic
+Paracetamol,CC(=O)NC1=CC=C(O)C=C1,Analgesic,Analgesic
+Diclofenac,OC(=O)CC1=C(NC2=C(Cl)C=CC=C2Cl)C=CC=C1,NSAID,Analgesic
+Naproxen,CC(C1=CC2=C(C=C1)C=C(OC)C=C2)C(=O)O,NSAID,Analgesic
+Warfarin,CC(=O)CC(C1=CC=CC=C1)C2=C(C3=CC=CC=C3OC2=O)O,Anticoagulant,Anticoagulant
+Metformin,CN(C)C(=NC(=N)N)N,Biguanide,Antidiabetic
+Atorvastatin,CC(C)C1=C(C(=C(N1CC(CC(CC(=O)O)O)O)C2=CC=C(C=C2)F)C3=CC=CC=C3)C(=O)NC4=CC=CC=C4,Statin,Lipid-lowering
+Simvastatin,CCC(C)(C)C(=O)OC1CC2(C)CCC3C(C2C=CC1)C=CC(C3)C(C)CC4CC(=O)OC4C,Statin,Lipid-lowering
+Amoxicillin,CC1(C(N2C(S1)C(C2=O)NC(=O)C(C3=CC=CC=C3)N)C(=O)O)C,Antibiotic,Antibacterial
+Ciprofloxacin,C1CC1N2C=C(C(=O)C3=CC(=C(C=C32)F)N4CCNCC4)C(=O)O,Fluoroquinolone,Antibiotic
+Doxycycline,CC1(C(C2(C(CC3C(C2=C(C(=O)C1=O)O)C(=O)C(C(=C3O)N(C)C)O)O)O)C)O,Tetracycline,Antibiotic
+Lisinopril,O=C(O)C(N(CC(CC1=CC=CC=C1)N)C(=O)C2CCCC2)C,ACE Inhibitor,Antihypertensive
+Losartan,CCCC1=NC(=C(N1CC2=CC=C(C=C2)C3=CC=CC=C3N4N=NN=N4)CO)Cl,ARB,Antihypertensive
+Amlodipine,CCOC(=O)C1=C(COCCN)NC(=C(C1C2=CC=CC=C2Cl)C(=O)OC)C,Calcium Channel Blocker,Antihypertensive
+Omeprazole,CC1=CN=C(C(=C1OC)C)CS(=O)C2=NC3=C(N2)C=C(C=C3)OC,Proton Pump Inhibitor,Antacid
+Pantoprazole,CC1=CN=C(C(=C1OC)C)CS(=O)C2=NC3=C(N2)C=C(C=C3)OC,Proton Pump Inhibitor,Antacid
+Sertraline,CN[C@H]1CC[C@@H](C2=C(C1)C=CC(=C2)Cl)C3=CC=CC=C3Cl,SSRI,Antidepressant
+Fluoxetine,CNCCC(C1=CC=CC=C1)OC2=CC=C(C=C2)C(F)(F)F,SSRI,Antidepressant
+Diazepam,CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3,Benzodiazepine,Anxiolytic
+Loratadine,CCOC(=O)N1CCC(=C2C3=C(C=CC(=C3)Cl)CCC4=CC=CC=C42)CC1,Antihistamine,Antiallergic
+Cetirizine,C1CN(CCN1CC2=CC=C(C=C2)Cl)CCOCO,Antihistamine,Antiallergic
+Salbutamol,CC(C)(C)NCC(C1=CC(=C(C=C1)O)CO)O,Beta-2 Agonist,Bronchodilator
+Prednisone,CC12CCC(=O)C=C1CCC3C2C(=O)CC4(C3CCC4(C(=O)CO)O)C,Corticosteroid,Anti-inflammatory
+Insulin,C/C1=C/C=C/C=C/C=C/C=C/C=C/C=C/C=C/C=C/C=C/C=C/C=C/C=C/C(=O)O,Peptide Hormone,Antidiabetic
+Clopidogrel,COC(=O)C(C1=CC=CC=C1Cl)N2CCC3=C(C2)C=CS3,Antiplatelet,Antiplatelet
+Digoxin,CC1C(C(CC(O1)OC2C(OC(CC2O)OC3C(OC(CC3O)OC4CCC5(C(C4)CCC6C5(CCC7(C6(CCC7C8=CC(=O)OC8)O)C)C)C)C)C)C)O)O,Cardiac Glycoside,Antiarrhythmic
+Furosemide,C1=CC(=C(C=C1C(=O)O)Cl)S(=O)(=O)N,Loop Diuretic,Diuretic
+Hydrochlorothiazide,C1=CC2=C(C=C1Cl)S(=O)(=O)N=C(N2)N,Thiazide Diuretic,Antihypertensive
+Propranolol,CC(C)NCC(COC1=CC=CC2=CC=CC=C21)O,Beta Blocker,Antihypertensive

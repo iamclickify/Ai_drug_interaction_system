@@ -1,0 +1,25 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Database
+backend/instance/
+*.db
+*.sqlite3
+
+# Models / Large Files
+datasets/tox21.csv.gz
+*.joblib
+
+# OS
+.DS_Store
+Thumbs.db
