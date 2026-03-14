@@ -1,5 +1,7 @@
 # AI Drug Interaction and Prediction System
 
+![Drug Explorer Dashboard Preview](./frontend/public/favicon.ico)
+
 ## Project Overview
 
 The **AI Drug Interaction and Prediction System** is a sophisticated bioinformatics platform designed to bridge the gap between abstract chemical data and actionable pharmacological insights. Developed as an end-to-end full-stack application, the platform aims to empower researchers, students, and clinical practitioners by providing predictive insights into medication safety, clinical efficacy, and systemic sustainability.
@@ -147,10 +149,3 @@ npm run dev
 ```
 
 The application will now be accessible at `http://localhost:5173`. Select "Drug Explorer" from the Navigation bar to begin testing compounds.
-
-## Screenshots
-<img width="1836" height="912" alt="image" src="https://github.com/user-attachments/assets/2e9c9b04-9cce-4fbf-b7a0-6d9e7e07c76f" />
-<img width="1847" height="921" alt="image" src="https://github.com/user-attachments/assets/c092e3ab-f084-4059-a5b8-398447010e15" />
-<img width="1832" height="915" alt="image" src="https://github.com/user-attachments/assets/6f455e73-c2ed-44be-8d02-c623a2ba19f8" />
-
-
