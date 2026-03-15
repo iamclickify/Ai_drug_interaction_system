@@ -31,3 +31,28 @@ export const checkInteraction = async (drugA, drugB) => {
     throw error;
   }
 };
+
+// Phase 2: OTC Brand Dictionary (Hardcoded for frontend speed)
+export const getBrandMap = () => {
+  return {
+    "Advil": "Ibuprofen",
+    "Motrin": "Ibuprofen",
+    "Aleve": "Naproxen",
+    "Naprosyn": "Naproxen",
+    "Aspirin": "Aspirin",
+    "Bayer": "Aspirin",
+    "Excedrin": "Aspirin", // (mixed, but contains aspirin)
+    "Tylenol": "Acetaminophen", // Not an NSAID, but crucial for collision detection
+    "NyQuil": "Acetaminophen",
+    "DayQuil": "Acetaminophen",
+    "Theraflu": "Acetaminophen",
+    "Voltaren": "Diclofenac",
+    "Cataflam": "Diclofenac",
+    "Celebrex": "Celecoxib",
+    "Mobic": "Meloxicam",
+    "Indocin": "Indomethacin",
+    "Toradol": "Ketorolac",
+    "Feldene": "Piroxicam",
+    "Relafen": "Nabumetone"
+  };
+};

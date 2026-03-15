@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { fetchDrugs, predictDrug } from '../services/api';
 import Tooltip from '../components/Tooltip';
 import { Share2, Users } from 'lucide-react';
+import { useRole } from '../context/RoleContext';
 
 const ComparisonDashboard = () => {
+  const { role } = useRole();
   const [drugs, setDrugs] = useState([]);
   const [drugA, setDrugA] = useState('');
   const [drugB, setDrugB] = useState('');
@@ -161,8 +163,8 @@ const ComparisonDashboard = () => {
       {results && !loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.5s ease' }}>
           
-          {/* SIMILARITY TOP SCORE */}
-          {similarityScore !== null && (
+          {/* SIMILARITY TOP SCORE (Researcher Only) */}
+          {similarityScore !== null && role === 'researcher' && (
              <div className="glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                 <Share2 size={48} color="var(--accent-primary)" />
                 <div>
@@ -232,25 +234,29 @@ const ComparisonDashboard = () => {
                   </td>
                 </tr>
 
-                {/* DESCRIPTORS */}
-                <tr>
-                   <td colSpan="3" style={{ padding: '0.75rem 2rem', background: 'rgba(0,0,0,0.2)', color: 'var(--accent-primary)', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>Molecular Descriptors</td>
-                </tr>
-                <tr>
-                   <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Molecular Weight</td>
-                   <td>{results[0].weight ? results[0].weight.toFixed(1) : results[0].descriptors[0].toFixed(1)} g/mol</td>
-                   <td>{results[1].weight ? results[1].weight.toFixed(1) : results[1].descriptors[0].toFixed(1)} g/mol</td>
-                </tr>
-                <tr>
-                   <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="LogP" explanation="Lipophilicity metric">LogP</Tooltip></td>
-                   <td>{results[0].descriptors[1].toFixed(2)}</td>
-                   <td>{results[1].descriptors[1].toFixed(2)}</td>
-                </tr>
-                <tr>
-                   <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="TPSA" explanation="Topological Polar Surface Area">TPSA</Tooltip></td>
-                   <td>{results[0].descriptors[4].toFixed(1)} Å²</td>
-                   <td>{results[1].descriptors[4].toFixed(1)} Å²</td>
-                </tr>
+                {/* DESCRIPTORS (Researcher Only) */}
+                {role === 'researcher' && (
+                  <>
+                    <tr>
+                       <td colSpan="3" style={{ padding: '0.75rem 2rem', background: 'rgba(0,0,0,0.2)', color: 'var(--accent-primary)', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>Molecular Descriptors</td>
+                    </tr>
+                    <tr>
+                       <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Molecular Weight</td>
+                       <td>{results[0].weight ? results[0].weight.toFixed(1) : results[0].descriptors[0].toFixed(1)} g/mol</td>
+                       <td>{results[1].weight ? results[1].weight.toFixed(1) : results[1].descriptors[0].toFixed(1)} g/mol</td>
+                    </tr>
+                    <tr>
+                       <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="LogP" explanation="Lipophilicity metric">LogP</Tooltip></td>
+                       <td>{results[0].descriptors[1].toFixed(2)}</td>
+                       <td>{results[1].descriptors[1].toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                       <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="TPSA" explanation="Topological Polar Surface Area">TPSA</Tooltip></td>
+                       <td>{results[0].descriptors[4].toFixed(1)} Å²</td>
+                       <td>{results[1].descriptors[4].toFixed(1)} Å²</td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>

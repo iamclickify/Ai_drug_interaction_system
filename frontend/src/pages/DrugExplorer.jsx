@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchDrugs, predictDrug } from '../services/api';
 import Tooltip from '../components/Tooltip';
+import { useRole } from '../context/RoleContext';
 
 const DrugExplorer = () => {
+  const { role } = useRole();
   const [drugs, setDrugs] = useState([]);
   const [selectedDrug, setSelectedDrug] = useState('');
   const [prediction, setPrediction] = useState(null);
@@ -220,40 +222,45 @@ const DrugExplorer = () => {
                 </div>
               </div>
 
-              <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Molecular Properties (RDKit)
-              </h3>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>Molecular Weight</div>
-                    <div style={{ fontSize: '1.125rem' }}>{prediction.weight ? prediction.weight.toFixed(2) : prediction.descriptors[0].toFixed(2)} g/mol</div>
-                 </div>
-                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>
-                       <Tooltip term="LogP" explanation="Partition coefficient measuring lipophilicity of a drug and its ability to cross biological membranes.">LogP (Lipophilicity)</Tooltip>
-                    </div>
-                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[1].toFixed(2)}</div>
-                 </div>
-                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>
-                       <Tooltip term="TPSA" explanation="Topological polar surface area. A proxy for optimizing a drug's cell permeability.">TPSA</Tooltip>
-                    </div>
-                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[4].toFixed(2)} Å²</div>
-                 </div>
-                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>H-Bond Donors</div>
-                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[2]}</div>
-                 </div>
-                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>H-Bond Acceptors</div>
-                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[3]}</div>
-                 </div>
-                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>Rotatable Bonds</div>
-                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[5]}</div>
-                 </div>
-              </div>
+              {/* Advanced Cheminformatics (Researcher Only) */}
+              {role === 'researcher' && (
+                <>
+                  <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Molecular Properties (RDKit)
+                  </h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                     <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="stat-label" style={{ fontSize: '0.75rem' }}>Molecular Weight</div>
+                        <div style={{ fontSize: '1.125rem' }}>{prediction.weight ? prediction.weight.toFixed(2) : prediction.descriptors[0].toFixed(2)} g/mol</div>
+                     </div>
+                     <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="stat-label" style={{ fontSize: '0.75rem' }}>
+                           <Tooltip term="LogP" explanation="Partition coefficient measuring lipophilicity of a drug and its ability to cross biological membranes.">LogP (Lipophilicity)</Tooltip>
+                        </div>
+                        <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[1].toFixed(2)}</div>
+                     </div>
+                     <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="stat-label" style={{ fontSize: '0.75rem' }}>
+                           <Tooltip term="TPSA" explanation="Topological polar surface area. A proxy for optimizing a drug's cell permeability.">TPSA</Tooltip>
+                        </div>
+                        <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[4].toFixed(2)} Å²</div>
+                     </div>
+                     <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="stat-label" style={{ fontSize: '0.75rem' }}>H-Bond Donors</div>
+                        <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[2]}</div>
+                     </div>
+                     <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="stat-label" style={{ fontSize: '0.75rem' }}>H-Bond Acceptors</div>
+                        <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[3]}</div>
+                     </div>
+                     <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="stat-label" style={{ fontSize: '0.75rem' }}>Rotatable Bonds</div>
+                        <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[5]}</div>
+                     </div>
+                  </div>
+                </>
+              )}
 
             </div>
 

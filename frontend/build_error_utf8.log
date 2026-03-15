@@ -1,0 +1,50 @@
+﻿~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31mx[39m Bui 
+   ld failed in 3.45s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31merror during build:
+[31msrc/pages/CaseSimulator.jsx (2:9): "UserHeart" is not 
+exported by 
+"node_modules/lucide-react/dist/esm/lucide-react.js", 
+imported by "src/pages/CaseSimulator.jsx".[31m
+file: [36mD:/Coding/Web dev/Drug_prediction/drug-ai-platform
+/frontend/src/pages/CaseSimulator.jsx:2:9[31m
+[33m
+1: import React, { useState } from 'react';
+2: import { UserHeart, CheckCircle, XCircle, Stethoscope, 
+AlertTriangle } from 'lucide-react';
+            ^
+3: 
+4: const mockCases = [
+[31m
+    at getRollupError (file:///D:/Coding/Web%20dev/Drug_predi
+ction/drug-ai-platform/frontend/node_modules/rollup/dist/es/s
+hared/parseAst.js:402:41)
+    at error (file:///D:/Coding/Web%20dev/Drug_prediction/dru
+g-ai-platform/frontend/node_modules/rollup/dist/es/shared/par
+seAst.js:398:42)
+    at Module.error (file:///D:/Coding/Web%20dev/Drug_predict
+ion/drug-ai-platform/frontend/node_modules/rollup/dist/es/sha
+red/node-entry.js:17040:16)
+    at Module.traceVariable (file:///D:/Coding/Web%20dev/Drug
+_prediction/drug-ai-platform/frontend/node_modules/rollup/dis
+t/es/shared/node-entry.js:17452:29)
+    at ModuleScope.findVariable (file:///D:/Coding/Web%20dev/
+Drug_prediction/drug-ai-platform/frontend/node_modules/rollup
+/dist/es/shared/node-entry.js:15070:39)
+    at ReturnValueScope.findVariable (file:///D:/Coding/Web%2
+0dev/Drug_prediction/drug-ai-platform/frontend/node_modules/r
+ollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionBodyScope.findVariable (file:///D:/Coding/Web%
+20dev/Drug_prediction/drug-ai-platform/frontend/node_modules/
+rollup/dist/es/shared/node-entry.js:5673:38)
+    at Identifier.bind (file:///D:/Coding/Web%20dev/Drug_pred
+iction/drug-ai-platform/frontend/node_modules/rollup/dist/es/
+shared/node-entry.js:5447:40)
+    at CallExpression.bind (file:///D:/Coding/Web%20dev/Drug_
+prediction/drug-ai-platform/frontend/node_modules/rollup/dist
+/es/shared/node-entry.js:2825:28)
+    at CallExpression.bind (file:///D:/Coding/Web%20dev/Drug_
+prediction/drug-ai-platform/frontend/node_modules/rollup/dist
+/es/shared/node-entry.js:12179:15)[39m
