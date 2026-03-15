@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchDrugs, predictDrug } from '../services/api';
+import Tooltip from '../components/Tooltip';
 
 const DrugExplorer = () => {
   const [drugs, setDrugs] = useState([]);
@@ -111,8 +112,8 @@ const DrugExplorer = () => {
 
   return (
     <div className="container">
-      <h1 className="page-title">Drug Explorer</h1>
-      <p className="page-subtitle">Analyze single pharmaceutical compounds using predictive AI and 3D Visualizations.</p>
+      <h1 className="page-title">NSAID Drug Explorer</h1>
+      <p className="page-subtitle">Analyze pharmaceutical compounds using 3D Visualizations and Cheminformatics Models.</p>
 
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div className="form-group">
@@ -123,7 +124,7 @@ const DrugExplorer = () => {
               value={selectedDrug}
               onChange={(e) => setSelectedDrug(e.target.value)}
             >
-              <option value="">-- Select a Drug --</option>
+              <option value="">-- Select an NSAID --</option>
               {drugs.map(drug => (
                 <option key={drug.id} value={drug.drug_name}>
                   {drug.drug_name} ({drug.drug_class || drug.category})
@@ -160,126 +161,182 @@ const DrugExplorer = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', marginBottom: '2rem' }}>
             
             <div>
-              <h2 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{selectedDrug}</h2>
-              <div style={{ padding: '0.5rem 1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', display: 'inline-block', marginBottom: '1rem' }}>
-                <code style={{ color: 'var(--accent-primary)', fontSize: '0.875rem' }}>{prediction.smiles}</code>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div>
+                  <h2 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{prediction.drug_name}</h2>
+                  <div style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    {prediction.iupac_name}
+                  </div>
+                  <div style={{ padding: '0.5rem 1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', display: 'inline-block', marginBottom: '1rem' }}>
+                    <code style={{ color: 'var(--accent-primary)', fontSize: '0.875rem' }}>{prediction.smiles}</code>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="stat-label">Discovery Year</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{prediction.year_discovery}</div>
+                </div>
               </div>
               
-              <h3 style={{ marginTop: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Predictions</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                 <div>
+                    <h4 style={{ color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>Pharmacology Overview</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{prediction.pharmacology_explanation}</p>
+                 </div>
+                 <div>
+                    <h4 style={{ color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>Mechanistic Reasoning</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{prediction.mechanistic_reasoning}</p>
+                 </div>
+              </div>
+
+              <h3 style={{ marginTop: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Pharmacokinetics & Clinical Profile
+              </h3>
           
-              <div className="dashboard-grid" style={{ marginTop: '0' }}>
-                {/* Effectiveness */}
+              <div className="dashboard-grid" style={{ marginTop: '0', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 <div className="stat-block">
-                  <div className="stat-label">Projected Effectiveness</div>
-                  <div className="stat-value" style={{ color: getAccuracyColor(prediction.effectiveness_score) }}>
-                    {(prediction.effectiveness_score * 100).toFixed(1)}%
+                  <div className="stat-label">
+                    <Tooltip term="Half-life" explanation="Time required for the concentration of the drug in the plasma to decrease by 50%.">Half-life</Tooltip>
                   </div>
-                  <div className="progress-container">
-                    <div 
-                      className="progress-bar" 
-                      style={{ 
-                        width: `${prediction.effectiveness_score * 100}%`,
-                        backgroundColor: getAccuracyColor(prediction.effectiveness_score)
-                      }}
-                    ></div>
-                  </div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>{prediction.half_life}</div>
+                </div>
+                
+                <div className="stat-block">
+                  <div className="stat-label">Typical Dosage</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>{prediction.dosage_range}</div>
                 </div>
 
-                {/* Toxicity */}
                 <div className="stat-block">
-                  <div className="stat-label">Toxicity Risk Category</div>
-                  <div className="stat-value" style={{ color: getRiskColor(prediction.toxicity_risk) }}>
-                    {prediction.toxicity_risk}
+                  <div className="stat-label">
+                    <Tooltip term="COX Selectivity" explanation="Cyclooxygenase (COX) enzyme responsible for producing prostaglandins involved in inflammation. Selectivity defines relative inhibition of COX-1 vs COX-2.">COX Selectivity</Tooltip>
                   </div>
-                  <div className="progress-container">
-                    <div 
-                      className="progress-bar" 
-                      style={{ 
-                        width: `${prediction.toxicity_risk === "High" ? 100 : (prediction.toxicity_risk === "Medium" ? 50 : 20)}%`,
-                        backgroundColor: getRiskColor(prediction.toxicity_risk)
-                      }}
-                    ></div>
-                  </div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>{prediction.cox_selectivity}</div>
                 </div>
-
-                {/* Sustainability */}
-                <div className="stat-block">
-                  <div className="stat-label">Sustainability Score</div>
-                  <div className="stat-value" style={{ color: getAccuracyColor(prediction.sustainability_score) }}>
-                    {(prediction.sustainability_score * 100).toFixed(1)}%
-                  </div>
-                  <div className="progress-container">
-                    <div 
-                      className="progress-bar" 
-                      style={{ 
-                        width: `${Math.min(100, prediction.sustainability_score * 100)}%`,
-                        backgroundColor: getAccuracyColor(prediction.sustainability_score)
-                      }}
-                    ></div>
+                
+                <div className="stat-block" style={{ borderLeft: `3px solid ${getRiskColor(prediction.gi_toxicity_risk)}` }}>
+                  <div className="stat-label">GI Toxicity Risk</div>
+                  <div style={{ color: getRiskColor(prediction.gi_toxicity_risk), fontWeight: 700, fontSize: '1.125rem' }}>
+                    {prediction.gi_toxicity_risk}
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* 3D Viewer Container */}
-            <div style={{ 
-              background: 'rgba(0, 0, 0, 0.2)', 
-              borderRadius: '1rem', 
-              border: '1px solid var(--glass-border)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              marginBottom: '1.5rem',
-              position: 'relative'
-            }}>
-              <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255, 255, 255, 0.02)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                Interactive 3D Structure
+              <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Molecular Properties (RDKit)
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>Molecular Weight</div>
+                    <div style={{ fontSize: '1.125rem' }}>{prediction.weight ? prediction.weight.toFixed(2) : prediction.descriptors[0].toFixed(2)} g/mol</div>
+                 </div>
+                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>
+                       <Tooltip term="LogP" explanation="Partition coefficient measuring lipophilicity of a drug and its ability to cross biological membranes.">LogP (Lipophilicity)</Tooltip>
+                    </div>
+                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[1].toFixed(2)}</div>
+                 </div>
+                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>
+                       <Tooltip term="TPSA" explanation="Topological polar surface area. A proxy for optimizing a drug's cell permeability.">TPSA</Tooltip>
+                    </div>
+                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[4].toFixed(2)} Å²</div>
+                 </div>
+                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>H-Bond Donors</div>
+                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[2]}</div>
+                 </div>
+                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>H-Bond Acceptors</div>
+                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[3]}</div>
+                 </div>
+                 <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="stat-label" style={{ fontSize: '0.75rem' }}>Rotatable Bonds</div>
+                    <div style={{ fontSize: '1.125rem' }}>{prediction.descriptors[5]}</div>
+                 </div>
               </div>
-              <div ref={viewerRef} style={{ width: '100%', height: '300px', cursor: 'grab', position: 'relative' }}></div>
+
             </div>
 
-            {/* External Citations Component */}
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(59, 130, 246, 0.2)',
-              padding: '1.25rem'
-            }}>
-              <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1rem' }}>Authentic References</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                Verify AI predictions against established clinical databases:
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <a 
-                  href={`https://pubchem.ncbi.nlm.nih.gov/compound/${selectedDrug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary"
-                  style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textAlign: 'center', padding: '0.5rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}
-                >
-                  View on PubChem
-                </a>
-                <a 
-                  href={`https://go.drugbank.com/unithermacodes?utf8=%E2%9C%93&query=${selectedDrug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary"
-                  style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textAlign: 'center', padding: '0.5rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}
-                >
-                  Verify on DrugBank
-                </a>
-                <a 
-                  href={`https://www.ebi.ac.uk/chembl/g/#search_results/all/query=${selectedDrug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary"
-                  style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textAlign: 'center', padding: '0.5rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }}
-                >
-                  Explore in ChEMBL
-                </a>
+            {/* Right Column: 3D Viewer & References */}
+            <div>
+              <div style={{ 
+                background: 'rgba(0, 0, 0, 0.2)', 
+                borderRadius: '1rem', 
+                border: '1px solid var(--glass-border)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                marginBottom: '1.5rem',
+                position: 'relative'
+              }}>
+                <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255, 255, 255, 0.02)', fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Interactive 3D Structure</span>
+                  <Tooltip term="Viewer Info" explanation="Drag to rotate, scroll to zoom. The 3D view visualizes spatial structural alignments crucial for COX active site binding.">
+                    <span style={{ cursor: 'pointer', color: 'var(--accent-primary)' }}>💡</span>
+                  </Tooltip>
+                </div>
+                <div ref={viewerRef} style={{ width: '100%', height: '300px', cursor: 'grab', position: 'relative' }}></div>
               </div>
-            </div>
 
+              {/* Functional Group Educational Tooltips */}
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.05)',
+                borderRadius: '1rem',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                padding: '1.25rem',
+                marginBottom: '1.5rem'
+              }}>
+                <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.75rem', fontSize: '1rem' }}>Key Functional Groups</h4>
+                <ul style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <li>
+                    <Tooltip term="Carboxylic Acid Group" explanation="Provides acidity and plays a major role in binding structurally to the positively charged residues in the lipophilic channel of the cyclooxygenase enzyme.">Carboxylic Acid (-COOH)</Tooltip> (often present in NSAIDs)
+                  </li>
+                  <li>
+                    <Tooltip term="Aromatic Rings" explanation="Contributes to molecular stability, rigidity, and necessary hydrophobic interactions within the active site of the COX enzyme.">Aromatic Restricting Systems</Tooltip>
+                  </li>
+                </ul>
+              </div>
+
+              {/* External Citations Component */}
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.05)',
+                borderRadius: '1rem',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                padding: '1.25rem'
+              }}>
+                <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1rem' }}>Authentic References</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <a 
+                    href={`https://pubchem.ncbi.nlm.nih.gov/compound/${selectedDrug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary"
+                    style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textAlign: 'center', padding: '0.5rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.875rem' }}
+                  >
+                    View on PubChem
+                  </a>
+                  <a 
+                    href={`https://go.drugbank.com/unithermacodes?utf8=%E2%9C%93&query=${selectedDrug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary"
+                    style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textAlign: 'center', padding: '0.5rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.875rem' }}
+                  >
+                    Verify on DrugBank
+                  </a>
+                  <a 
+                    href={`https://www.ebi.ac.uk/chembl/g/#search_results/all/query=${selectedDrug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary"
+                    style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', textAlign: 'center', padding: '0.5rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.875rem' }}
+                  >
+                    Explore in ChEMBL
+                  </a>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       )}

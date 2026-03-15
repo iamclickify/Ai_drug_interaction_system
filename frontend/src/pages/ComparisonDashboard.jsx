@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDrugs, predictDrug } from '../services/api';
+import Tooltip from '../components/Tooltip';
+import { Share2, Users } from 'lucide-react';
 
 const ComparisonDashboard = () => {
   const [drugs, setDrugs] = useState([]);
   const [drugA, setDrugA] = useState('');
   const [drugB, setDrugB] = useState('');
   const [results, setResults] = useState(null);
+  const [similarityScore, setSimilarityScore] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Scenario state
+  const [scenarioAge, setScenarioAge] = useState('Adult');
+  const [scenarioCondition, setScenarioCondition] = useState('Osteoarthritis');
+  const [scenarioDuration, setScenarioDuration] = useState('Chronic');
+  const [scenarioAnalysis, setScenarioAnalysis] = useState(null);
 
   useEffect(() => {
     const loadDrugs = async () => {
@@ -17,24 +26,39 @@ const ComparisonDashboard = () => {
     loadDrugs();
   }, []);
 
+  const fetchSimilarity = async (dA, dB) => {
+    try {
+      const res = await fetch('http://localhost:5000/similarity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drugA: dA, drugB: dB })
+      });
+      const data = await res.json();
+      if (res.ok) setSimilarityScore(data.similarity_score);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleCompare = async () => {
     if (!drugA || !drugB) return;
     if (drugA === drugB) {
-      setError("Please select two different drugs to compare.");
+      setError("Please select two different NSAIDs to compare.");
       return;
     }
     
     setLoading(true);
     setError(null);
     setResults(null);
+    setScenarioAnalysis(null);
     
     try {
       const [resA, resB] = await Promise.all([
         predictDrug(drugA),
         predictDrug(drugB)
       ]);
-      // The API now returns a flat dictionary structure
       setResults([resA, resB]);
+      await fetchSimilarity(drugA, drugB);
     } catch (err) {
       setError("Failed to generate predictive comparison.");
     } finally {
@@ -42,33 +66,50 @@ const ComparisonDashboard = () => {
     }
   };
 
-  const getAccuracyColor = (val, inv = false) => {
-    const perc = val * 100;
-    if (inv) {
-      if (perc < 30) return 'var(--accent-secondary)'; // Green
-      if (perc < 70) return 'var(--accent-warning)';   // Yellow
-      return 'var(--accent-danger)';                   // Red
+  const runScenario = () => {
+    if (!results) return;
+    // Educational simple logic just based on the data
+    const d1 = results[0];
+    const d2 = results[1];
+    
+    let analysis = `Based on a ${scenarioAge} patient requiring ${scenarioDuration} treatment for ${scenarioCondition}:\n\n`;
+    
+    if (scenarioDuration === 'Chronic' || scenarioAge === 'Elderly') {
+      const saferGI = (d1.gi_toxicity_risk === 'Low' || d1.gi_toxicity_risk === 'Low-Moderate') ? d1.drug_name : 
+                     (d2.gi_toxicity_risk === 'Low' || d2.gi_toxicity_risk === 'Low-Moderate') ? d2.drug_name : null;
+      
+      if (saferGI) {
+         analysis += `➤ For chronic/elderly populations where upper GI bleeding is a major concern, NSAIDs with lower GI toxicity risk like **${saferGI}** are generally preferred over agents with higher baseline COX-1 blockade.\n`;
+      } else {
+         analysis += `➤ Both **${d1.drug_name}** and **${d2.drug_name}** carry elevated GI risk (${d1.gi_toxicity_risk} and ${d2.gi_toxicity_risk} respectively). Co-administration of a PPI might be pharmacologically indicated.\n`;
+      }
+
+      if (d1.cardio_risk === 'High' || d2.cardio_risk === 'High') {
+         analysis += `➤ *CAUTION:* COX-2 selective agents like **${d1.cardio_risk==='High'?d1.drug_name:d2.drug_name}** increase thrombotic cardiovascular risk, an important factor in elderly patients.\n`;
+      }
+    } else {
+      analysis += `➤ For acute/short-term scenarios, rapid onset agents are typically desired. **${d1.drug_name}** Half-life: ${d1.half_life} | **${d2.drug_name}** Half-life: ${d2.half_life}.\n`;
     }
-    if (perc > 70) return 'var(--accent-secondary)'; // Green
-    if (perc > 30) return 'var(--accent-warning)';   // Yellow
-    return 'var(--accent-danger)';                   // Red
+
+    setScenarioAnalysis(analysis);
   };
 
   const getRiskColor = (riskStr) => {
-      if (riskStr === 'Low') return 'var(--accent-secondary)';
-      if (riskStr === 'Medium' || riskStr === 'Moderate') return 'var(--accent-warning)';
+      if (!riskStr) return 'var(--text-primary)';
+      if (riskStr.includes('Low')) return 'var(--accent-secondary)';
+      if (riskStr.includes('Moderate') || riskStr.includes('Medium')) return 'var(--accent-warning)';
       return 'var(--accent-danger)';
   };
 
   return (
     <div className="container">
-      <h1 className="page-title">Comparison Dashboard</h1>
-      <p className="page-subtitle">Analyze structured predictive differences between two medications side-by-side.</p>
+      <h1 className="page-title">Drug Comparison Tool</h1>
+      <p className="page-subtitle">Analyze structural similarities, molecular descriptors, and clinical scenarios.</p>
 
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '1.5rem' }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">First Drug</label>
+            <label className="form-label">First NSAID</label>
             <select 
               className="form-select"
               value={drugA}
@@ -81,7 +122,7 @@ const ComparisonDashboard = () => {
             </select>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Second Drug</label>
+            <label className="form-label">Second NSAID</label>
             <select 
               className="form-select"
               value={drugB}
@@ -101,7 +142,7 @@ const ComparisonDashboard = () => {
           disabled={!drugA || !drugB || loading}
           style={{ width: '100%', padding: '1rem', fontSize: '1.125rem' }}
         >
-          {loading ? 'Generating Analysis Grid...' : 'Compare Side-by-Side'}
+          {loading ? 'Generating Analysis...' : 'Compare Side-by-Side'}
         </button>
 
         {error && (
@@ -118,103 +159,153 @@ const ComparisonDashboard = () => {
       )}
 
       {results && !loading && (
-        <div className="glass-card" style={{ animation: 'fadeIn 0.5s ease', padding: 0, overflow: 'hidden' }}>
-          <table>
-            <thead>
-              <tr style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
-                <th style={{ width: '20%', paddingLeft: '2rem' }}>Metric Base</th>
-                <th style={{ width: '40%' }}>
-                   <div style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{drugA}</div>
-                   <div style={{ fontSize: '0.875rem', fontWeight: 400, fontFamily: 'monospace' }}>{results[0].smiles.substring(0,20)}...</div>
-                </th>
-                <th style={{ width: '40%' }}>
-                  <div style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{drugB}</div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 400, fontFamily: 'monospace' }}>{results[1].smiles.substring(0,20)}...</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* PRIMARY PREDICTIONS */}
-              <tr>
-                 <td colSpan="3" style={{ padding: '1rem 2rem', background: 'rgba(0,0,0,0.1)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>AI Predictions</td>
-              </tr>
-              <tr>
-                <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Projected Effectiveness</td>
-                <td>
-                  <div style={{ color: getAccuracyColor(results[0].effectiveness_score), fontWeight: 700, fontSize: '1.25rem' }}>
-                    {(results[0].effectiveness_score * 100).toFixed(1)}%
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.5s ease' }}>
+          
+          {/* SIMILARITY TOP SCORE */}
+          {similarityScore !== null && (
+             <div className="glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <Share2 size={48} color="var(--accent-primary)" />
+                <div>
+                  <h3 style={{ color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                    <Tooltip term="Tanimoto Similarity" explanation="Calculated using Morgan Fingerprints (Radius 2). Measures structural overlap between two molecules.">Chemical Structure Similarity</Tooltip>
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                     <span style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{(similarityScore * 100).toFixed(1)}%</span>
+                     <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>homology</span>
                   </div>
-                </td>
-                <td>
-                   <div style={{ color: getAccuracyColor(results[1].effectiveness_score), fontWeight: 700, fontSize: '1.25rem' }}>
-                    {(results[1].effectiveness_score * 100).toFixed(1)}%
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Toxicity Risk</td>
-                 <td>
-                  <div style={{ color: getRiskColor(results[0].toxicity_risk), fontWeight: 700, fontSize: '1.25rem' }}>
-                    {results[0].toxicity_risk}
-                  </div>
-                </td>
-                <td>
-                   <div style={{ color: getRiskColor(results[1].toxicity_risk), fontWeight: 700, fontSize: '1.25rem' }}>
-                    {results[1].toxicity_risk}
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Sustainability Score</td>
-                <td>
-                  <div style={{ color: getAccuracyColor(results[0].sustainability_score), fontWeight: 700, fontSize: '1.25rem' }}>
-                    {(results[0].sustainability_score * 100).toFixed(1)}%
-                  </div>
-                </td>
-                <td>
-                   <div style={{ color: getAccuracyColor(results[1].sustainability_score), fontWeight: 700, fontSize: '1.25rem' }}>
-                    {(results[1].sustainability_score * 100).toFixed(1)}%
-                  </div>
-                </td>
-              </tr>
-              
-              {/* DESCRIPTORS */}
-              <tr>
-                 <td colSpan="3" style={{ padding: '1rem 2rem', background: 'rgba(0,0,0,0.1)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>Molecular Vectors</td>
-              </tr>
-              <tr>
-                 <td style={{ paddingLeft: '2rem' }}>Molecular Weight</td>
-                 <td style={{ fontWeight: 600 }}>{results[0].descriptors[0].toFixed(1)}</td>
-                 <td style={{ fontWeight: 600 }}>{results[1].descriptors[0].toFixed(1)}</td>
-              </tr>
-              <tr>
-                 <td style={{ paddingLeft: '2rem' }}>LogP</td>
-                 <td style={{ fontWeight: 600 }}>{results[0].descriptors[1].toFixed(2)}</td>
-                 <td style={{ fontWeight: 600 }}>{results[1].descriptors[1].toFixed(2)}</td>
-              </tr>
-              <tr>
-                 <td style={{ paddingLeft: '2rem' }}>H-Bond Donors</td>
-                 <td style={{ fontWeight: 600 }}>{results[0].descriptors[2]}</td>
-                 <td style={{ fontWeight: 600 }}>{results[1].descriptors[2]}</td>
-              </tr>
-              <tr>
-                 <td style={{ paddingLeft: '2rem' }}>H-Bond Acceptors</td>
-                 <td style={{ fontWeight: 600 }}>{results[0].descriptors[3]}</td>
-                 <td style={{ fontWeight: 600 }}>{results[1].descriptors[3]}</td>
-              </tr>
-              <tr>
-                 <td style={{ paddingLeft: '2rem' }}>TPSA</td>
-                 <td style={{ fontWeight: 600 }}>{results[0].descriptors[4].toFixed(1)}</td>
-                 <td style={{ fontWeight: 600 }}>{results[1].descriptors[4].toFixed(1)}</td>
-              </tr>
-              <tr>
-                 <td style={{ paddingLeft: '2rem' }}>Rotatable Bonds</td>
-                 <td style={{ fontWeight: 600 }}>{results[0].descriptors[5]}</td>
-                 <td style={{ fontWeight: 600 }}>{results[1].descriptors[5]}</td>
-              </tr>
+                </div>
+             </div>
+          )}
 
-            </tbody>
-          </table>
+          {/* MAIN TABLE */}
+          <div className="glass-card" style={{ padding: 0, overflow: 'x-auto' }}>
+            <table>
+              <thead>
+                <tr style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
+                  <th style={{ width: '25%', paddingLeft: '2rem' }}>Pharmacological Metric</th>
+                  <th style={{ width: '37.5%' }}>
+                     <div style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{drugA}</div>
+                     <div style={{ fontSize: '0.875rem', fontWeight: 400, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{results[0].iupac_name}</div>
+                  </th>
+                  <th style={{ width: '37.5%' }}>
+                    <div style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{drugB}</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 400, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{results[1].iupac_name}</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* CLINICAL */}
+                <tr>
+                   <td colSpan="3" style={{ padding: '0.75rem 2rem', background: 'rgba(0,0,0,0.2)', color: 'var(--accent-primary)', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>Clinical Profile</td>
+                </tr>
+                <tr>
+                  <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="Half-life" explanation="Plasma concentration halving time">Half-life</Tooltip></td>
+                  <td>{results[0].half_life}</td>
+                  <td>{results[1].half_life}</td>
+                </tr>
+                <tr>
+                  <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Typical Dose</td>
+                  <td>{results[0].dosage_range}</td>
+                  <td>{results[1].dosage_range}</td>
+                </tr>
+                <tr>
+                  <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="COX Selectivity" explanation="Ratio of COX-2 vs COX-1 inhibition.">COX Selectivity</Tooltip></td>
+                  <td>{results[0].cox_selectivity}</td>
+                  <td>{results[1].cox_selectivity}</td>
+                </tr>
+                <tr>
+                  <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>GI Toxicity Risk</td>
+                   <td>
+                    <div style={{ color: getRiskColor(results[0].gi_toxicity_risk), fontWeight: 700 }}>{results[0].gi_toxicity_risk}</div>
+                  </td>
+                  <td>
+                     <div style={{ color: getRiskColor(results[1].gi_toxicity_risk), fontWeight: 700 }}>{results[1].gi_toxicity_risk}</div>
+                  </td>
+                </tr>
+                 <tr>
+                  <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Cardiovascular Risk</td>
+                   <td>
+                    <div style={{ color: getRiskColor(results[0].cardio_risk), fontWeight: 700 }}>{results[0].cardio_risk}</div>
+                  </td>
+                  <td>
+                     <div style={{ color: getRiskColor(results[1].cardio_risk), fontWeight: 700 }}>{results[1].cardio_risk}</div>
+                  </td>
+                </tr>
+
+                {/* DESCRIPTORS */}
+                <tr>
+                   <td colSpan="3" style={{ padding: '0.75rem 2rem', background: 'rgba(0,0,0,0.2)', color: 'var(--accent-primary)', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>Molecular Descriptors</td>
+                </tr>
+                <tr>
+                   <td style={{ paddingLeft: '2rem', fontWeight: 600 }}>Molecular Weight</td>
+                   <td>{results[0].weight ? results[0].weight.toFixed(1) : results[0].descriptors[0].toFixed(1)} g/mol</td>
+                   <td>{results[1].weight ? results[1].weight.toFixed(1) : results[1].descriptors[0].toFixed(1)} g/mol</td>
+                </tr>
+                <tr>
+                   <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="LogP" explanation="Lipophilicity metric">LogP</Tooltip></td>
+                   <td>{results[0].descriptors[1].toFixed(2)}</td>
+                   <td>{results[1].descriptors[1].toFixed(2)}</td>
+                </tr>
+                <tr>
+                   <td style={{ paddingLeft: '2rem', fontWeight: 600 }}><Tooltip term="TPSA" explanation="Topological Polar Surface Area">TPSA</Tooltip></td>
+                   <td>{results[0].descriptors[4].toFixed(1)} Å²</td>
+                   <td>{results[1].descriptors[4].toFixed(1)} Å²</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* PATIENT SCENARIO SIMULATOR */}
+          <div className="glass-card" style={{ borderLeft: '4px solid #a78bfa' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <Users size={32} color="#a78bfa" />
+                <h3 style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>Patient Scenario Analysis</h3>
+             </div>
+             
+             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                Simulate a patient profile to view educational pharmacological reasoning contrasting these two agents. <strong style={{ color: 'var(--accent-warning)' }}>For educational chemistry/pharmacology purposes only, not clinical advice.</strong>
+             </p>
+
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Age Group</label>
+                  <select className="form-select" value={scenarioAge} onChange={(e) => setScenarioAge(e.target.value)}>
+                    <option>Adult</option>
+                    <option>Elderly</option>
+                    <option>Pediatric</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Condition</label>
+                  <select className="form-select" value={scenarioCondition} onChange={(e) => setScenarioCondition(e.target.value)}>
+                    <option>Osteoarthritis</option>
+                    <option>Rheumatoid Arthritis</option>
+                    <option>Acute Strain/Sprain</option>
+                    <option>Post-operative Pain</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Duration</label>
+                  <select className="form-select" value={scenarioDuration} onChange={(e) => setScenarioDuration(e.target.value)}>
+                    <option>Acute (Days)</option>
+                    <option>Chronic (Months/Years)</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                   <button className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' }} onClick={runScenario}>
+                     Simulate
+                   </button>
+                </div>
+             </div>
+
+             {scenarioAnalysis && (
+                <div style={{ padding: '1.5rem', background: 'rgba(167, 139, 250, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(167, 139, 250, 0.3)', whiteSpace: 'pre-line', lineHeight: '1.7' }}>
+                   {scenarioAnalysis}
+                </div>
+             )}
+
+          </div>
+
         </div>
       )}
     </div>
@@ -222,3 +313,4 @@ const ComparisonDashboard = () => {
 };
 
 export default ComparisonDashboard;
+

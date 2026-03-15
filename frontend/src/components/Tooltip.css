@@ -1,0 +1,83 @@
+/* Tooltip Container */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.tooltip-trigger {
+  border-bottom: 1px dotted var(--accent-primary);
+  color: var(--accent-primary);
+  transition: all 0.2s ease;
+}
+
+.tooltip-trigger:hover {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+}
+
+/* Tooltip Box */
+.tooltip-box {
+  position: absolute;
+  bottom: 125%; /* Position above the trigger */
+  left: 50%;
+  transform: translateX(-50%);
+  
+  width: max-content;
+  max-width: 280px;
+  padding: 1rem;
+  
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--accent-primary);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.2);
+  
+  z-index: 9999;
+  
+  /* Typing/Text */
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: left;
+
+  /* Animation */
+  animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Caret pointing down */
+.tooltip-box::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--accent-primary) transparent transparent transparent;
+}
+
+.tooltip-box strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #60a5fa;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.25rem;
+}
+
+.tooltip-text {
+  color: var(--text-secondary);
+}
+
+@keyframes tooltipFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
