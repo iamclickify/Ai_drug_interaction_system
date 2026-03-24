@@ -47,66 +47,96 @@ const ConsumerDashboard = () => {
     
     const text = nlpText.toLowerCase();
     
-    // Simple keyword mapping
+    // Advanced keyword mapping
     const symptomMap = {
-      'headache': 'Headache / Migraine',
-      'migraine': 'Headache / Migraine',
+      'head': 'Headache / Migraine',
+      'migrain': 'Headache / Migraine',
       'muscle': 'Muscle Strain / Sprain',
       'back': 'Back Pain',
       'joint': 'Osteoarthritis / Joint Pain',
+      'arthriti': 'Osteoarthritis / Joint Pain',
       'period': 'Menstrual Cramps',
       'cramp': 'Menstrual Cramps',
       'fever': 'Fever',
+      'temp': 'Fever',
       'teeth': 'Dental Pain',
       'tooth': 'Dental Pain',
-      'surgery': 'Post-Surgery Pain'
+      'dent': 'Dental Pain',
+      'surgery': 'Post-Surgery Pain',
+      'operat': 'Post-Surgery Pain',
+      'rheumat': 'Rheumatoid Arthritis'
     };
 
     for (const [key, value] of Object.entries(symptomMap)) {
       if (text.includes(key)) {
         setPainType(value);
-        break;
       }
     }
 
     // Map keywords to conditions
-    healthConditions.forEach(cond => {
-      const condKeywords = cond.label.toLowerCase().split(' ');
-      if (condKeywords.some(k => k.length > 3 && text.includes(k))) {
-        if (!selectedConditions.includes(cond.id)) {
-          toggleCondition(cond.id);
+    const conditionKeywords = {
+      'pregnant': 'pregnant',
+      'breastfeed': 'pregnant',
+      'diabet': 'diabetes',
+      'sugar': 'diabetes',
+      'tension': 'hypertension',
+      'pressure': 'hypertension',
+      'bp': 'hypertension',
+      'obese': 'obesity',
+      'weight': 'obesity',
+      'bmi': 'obesity',
+      'thin': 'bloodThinners',
+      'warfarin': 'bloodThinners',
+      'aspirin': 'bloodThinners',
+      'clopidogrel': 'bloodThinners',
+      'kidney': 'kidneyIssues',
+      'renal': 'kidneyIssues',
+      'ulcer': 'stomachUlcers',
+      'stomach': 'stomachUlcers',
+      'gastric': 'stomachUlcers'
+    };
+
+    Object.entries(conditionKeywords).forEach(([key, id]) => {
+      if (text.includes(key)) {
+        if (!selectedConditions.includes(id)) {
+          toggleCondition(id);
         }
       }
     });
 
-    if (text.includes('bad') || text.includes('severe') || text.includes('extreme')) {
+    if (text.includes('bad') || text.includes('severe') || text.includes('extreme') || text.includes('kill')) {
       setSeverity('Severe');
-    } else if (text.includes('mild') || text.includes('little')) {
+    } else if (text.includes('mild') || text.includes('little') || text.includes('slight')) {
       setSeverity('Mild');
     }
+
+    if (text.includes('chronic') || text.includes('long') || text.includes('year') || text.includes('month')) {
+      setDuration('Chronic (Months to Years)');
+    } else if (text.includes('acute') || text.includes('start') || text.includes('just')) {
+      setDuration('Acute (A few days)');
+    }
+    
+    // Trigger search after NLP update
+    handleSearch();
   };
 
   const handleSearch = () => {
     let filtered = [];
     
+    const getDrug = (name) => drugs.find(d => d.drug_name.toLowerCase() === name.toLowerCase());
+    
     if (duration.includes('Chronic') || painType.includes('Arthritis')) {
-      filtered = drugs.filter(d => 
-        ['Meloxicam', 'Celecoxib', 'Naproxen', 'Diclofenac'].includes(d.drug_name)
-      );
+      filtered = ['Meloxicam', 'Celecoxib', 'Naproxen', 'Diclofenac'].map(getDrug).filter(Boolean);
     } else if (severity === 'Mild' || severity === 'Moderate') {
-       filtered = drugs.filter(d => 
-        ['Ibuprofen', 'Naproxen', 'Aspirin'].includes(d.drug_name)
-      );
+      filtered = ['Ibuprofen', 'Naproxen', 'Aspirin'].map(getDrug).filter(Boolean);
     } else {
-      filtered = drugs.filter(d => 
-        ['Ketorolac', 'Diclofenac', 'Indomethacin', 'Ibuprofen'].includes(d.drug_name)
-      );
+      filtered = ['Ketorolac', 'Diclofenac', 'Indomethacin', 'Ibuprofen'].map(getDrug).filter(Boolean);
     }
 
     if (age.includes('65+')) {
       filtered = filtered.sort((a,b) => {
-         const riskA = a.gi_toxicity_risk.includes('Low') ? -1 : 1;
-         const riskB = b.gi_toxicity_risk.includes('Low') ? -1 : 1;
+         const riskA = (a.gi_toxicity_risk || "").includes('Low') ? -1 : 1;
+         const riskB = (b.gi_toxicity_risk || "").includes('Low') ? -1 : 1;
          return riskA - riskB;
       });
     }
@@ -258,8 +288,15 @@ const ConsumerDashboard = () => {
                 placeholder="e.g. My back hurts and I have high blood pressure"
                 value={nlpText}
                 onChange={e => setNlpText(e.target.value)}
-                onBlur={handleNLPAnalyze}
+                onKeyDown={e => e.key === 'Enter' && handleNLPAnalyze()}
               />
+              <button 
+                className="btn-secondary" 
+                style={{ borderRadius: '0.5rem', padding: '0 1rem' }}
+                onClick={handleNLPAnalyze}
+              >
+                Go
+              </button>
             </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
               Analysis automatically updates the fields below.
@@ -474,8 +511,31 @@ const ConsumerDashboard = () => {
           )}
         </div>
 
+      {/* Verified Sources Authentication Section */}
+      <div style={{ marginTop: '4rem', padding: '3rem 2rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center', background: 'rgba(0,0,0,0.1)', borderRadius: '1rem' }}>
+        <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>
+          Science-Backed Sustainability & Safety
+        </h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2.5rem', opacity: 0.8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            <ShieldAlert size={18} color="var(--accent-primary)" /> EMA Verified ERA
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            <ShieldAlert size={18} color="var(--accent-primary)" /> SHC Eco-Impact
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            <ShieldAlert size={18} color="var(--accent-primary)" /> NHS SDU Lifecycle
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            <ShieldAlert size={18} color="var(--accent-primary)" /> PubChem Integration
+          </div>
+        </div>
+        <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '700px', margin: '1.5rem auto 0', lineHeight: '1.6', fontStyle: 'italic' }}>
+          "Empowering patients with data-driven insights for a healthier body and a cleaner planet."
+        </p>
       </div>
     </div>
+  </div>
   );
 };
 

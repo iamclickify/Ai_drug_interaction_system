@@ -16,6 +16,11 @@ const DrugExplorer = () => {
   useEffect(() => {
     const loadDrugs = async () => {
       const data = await fetchDrugs();
+      if (data.length === 0) {
+        setError("Database unreachable. Please ensure the backend server is running on port 5000.");
+      } else {
+        setError(null);
+      }
       setDrugs(data.sort((a, b) => a.drug_name.localeCompare(b.drug_name)));
     };
     loadDrugs();

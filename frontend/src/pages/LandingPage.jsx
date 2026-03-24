@@ -11,8 +11,6 @@ const LandingPage = () => {
     setRole(selectedRole);
     if (selectedRole === 'consumer') {
       navigate('/consumer');
-    } else if (selectedRole === 'student') {
-      navigate('/student/sar');
     } else if (selectedRole === 'researcher') {
       navigate('/researcher/explorer');
     }
@@ -51,31 +49,6 @@ const LandingPage = () => {
             <span className="badge badge-blue">Medicine Cabinet</span>
             <span className="badge badge-blue">Dosage Guide</span>
             <span className="badge badge-blue">Side Effects</span>
-          </div>
-        </div>
-
-        {/* Student Card */}
-        <div 
-          className="glass-card" 
-          style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', transition: 'all 0.3s ease', borderTop: '4px solid #10b981' }}
-          onClick={() => handleRoleSelection('student')}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', marginBottom: '1.5rem' }}>
-            <GraduationCap size={48} color="#10b981" />
-          </div>
-          <h2 style={{ color: 'var(--text-primary)', marginBottom: '0.75rem' }}>I am a Student</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', fontSize: '0.95rem' }}>
-            Study molecular structures, mechanisms of action, clinical cases, and test your knowledge with quizzes.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', justifyContent: 'center' }}>
-            <span className="badge badge-green">SAR Visualizer</span>
-            <span className="badge badge-green">Case Simulator</span>
-            <span className="badge badge-green">Mechanism</span>
-            <span className="badge badge-green">Flashcards</span>
-            <span className="badge badge-green">Classification</span>
-            <span className="badge badge-green">Quiz Mode</span>
           </div>
         </div>
 

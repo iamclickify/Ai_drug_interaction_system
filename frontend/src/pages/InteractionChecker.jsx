@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { fetchDrugs, checkInteraction } from '../services/api';
-import { ShieldAlert, AlertTriangle, CheckCircle, Info, Plus, Trash2, LayoutGrid } from 'lucide-react';
+import { fetchDrugs, analyzeDrugs } from '../services/api';
+import { ShieldAlert, AlertTriangle, CheckCircle, Info, Plus, Trash2, LayoutGrid, Leaf, DollarSign, Lightbulb } from 'lucide-react';
 
 const InteractionChecker = () => {
-  const [drugs, setDrugs] = useState([]);
+  const [availableDrugs, setAvailableDrugs] = useState([]);
   const [selectedDrugs, setSelectedDrugs] = useState([]);
   const [currentDrug, setCurrentDrug] = useState('');
-  const [results, setResults] = useState([]);
-  const [regimenRisk, setRegimenRisk] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadDrugs = async () => {
       const data = await fetchDrugs();
-      setDrugs(data.sort((a, b) => a.drug_name.localeCompare(b.drug_name)));
+      if (data.length === 0) {
+        setError("Database unreachable. Please ensure the backend server is running on port 5000.");
+      } else {
+        setError(null);
+      }
+      setAvailableDrugs(data.sort((a, b) => a.drug_name.localeCompare(b.drug_name)));
     };
     loadDrugs();
   }, []);
@@ -22,11 +26,7 @@ const InteractionChecker = () => {
   const addDrug = () => {
     if (!currentDrug) return;
     if (selectedDrugs.includes(currentDrug)) {
-      setError("Drug already added to regimen.");
-      return;
-    }
-    if (selectedDrugs.length >= 5) {
-      setError("Maximum 5 drugs allowed for polypharmacy analysis.");
+      setError("Drug already added.");
       return;
     }
     setSelectedDrugs([...selectedDrugs, currentDrug]);
@@ -36,174 +36,202 @@ const InteractionChecker = () => {
 
   const removeDrug = (name) => {
     setSelectedDrugs(selectedDrugs.filter(d => d !== name));
-    setRegimenRisk(null);
-    setResults([]);
+    setAnalysis(null);
   };
 
-  const handleCheck = async () => {
+  const handleAnalyze = async () => {
     if (selectedDrugs.length < 2) {
-      setError("Please select at least two drugs for interaction analysis.");
+      setError("Please select at least two drugs to check interactions.");
       return;
     }
     
     setLoading(true);
     setError(null);
-    const pairResults = [];
-    
     try {
-      // Analyze all pairs
-      for (let i = 0; i < selectedDrugs.length; i++) {
-        for (let j = i + 1; j < selectedDrugs.length; j++) {
-          const res = await checkInteraction(selectedDrugs[i], selectedDrugs[j]);
-          pairResults.push({
-            pair: [selectedDrugs[i], selectedDrugs[j]],
-            ...res
-          });
-        }
-      }
-      
-      setResults(pairResults);
-      
-      // Calculate Overall Regimen Risk
-      const maxRisk = pairResults.reduce((acc, r) => {
-        const levels = { 'Low': 1, 'Moderate': 2, 'High': 3 };
-        return Math.max(acc, levels[r.interaction_risk] || 0);
-      }, 0);
-      
-      const riskMapping = { 1: 'Low', 2: 'Moderate', 3: 'High' };
-      setRegimenRisk(riskMapping[maxRisk] || 'Low');
-
+      const result = await analyzeDrugs(selectedDrugs);
+      setAnalysis(result);
     } catch (err) {
-      setError(err.response?.data?.error || "An error occurred during multi-drug analysis.");
+      setError(err.response?.data?.detail || "An error occurred during analysis.");
     } finally {
       setLoading(false);
     }
   };
 
-  const getRiskUIProps = (risk) => {
-    switch (risk) {
-      case 'Low':
-        return { color: 'var(--accent-secondary)', icon: <CheckCircle size={32} /> };
-      case 'Medium':
-        return { color: 'var(--accent-warning)', icon: <AlertTriangle size={32} /> };
-      case 'High':
-        return { color: 'var(--accent-danger)', icon: <ShieldAlert size={32} /> };
-      default:
-        return { color: 'var(--text-primary)', icon: <Info size={32} /> };
+  const getRiskColor = (label) => {
+    switch (label) {
+      case 'Low': return 'var(--accent-secondary)';
+      case 'Moderate': return 'var(--accent-warning)';
+      case 'High': return 'var(--accent-danger)';
+      default: return 'var(--text-secondary)';
     }
   };
 
   return (
     <div className="container">
-      <h1 className="page-title">Polypharmacy Interaction Analyzer</h1>
-      <p className="page-subtitle">Analyze complex medication regimens. Add up to 5 drugs to identify multi-way interactions and compounding toxicities.</p>
+      <h1 className="page-title">Drug Interaction AI</h1>
+      <p className="page-subtitle">Analyze clinical interaction risks, environmental toxicity, and cost impact for complex drug regimens.</p>
 
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-            <label className="form-label">Add Drug to Regimen</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+          <div style={{ flex: 1, minWidth: '300px' }}>
+            <label className="form-label">Search & Add Drugs</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <select 
                 className="form-select"
                 value={currentDrug}
                 onChange={(e) => setCurrentDrug(e.target.value)}
               >
-                <option value="">-- Search Drugs --</option>
-                {drugs.map(drug => (
-                  <option key={drug.id} value={drug.drug_name}>{drug.drug_name}</option>
+                <option value="">-- Select a drug --</option>
+                {availableDrugs.map(d => (
+                  <option key={d.id} value={d.drug_name}>{d.drug_name} ({d.category})</option>
                 ))}
               </select>
-              <button className="btn-secondary" onClick={addDrug} style={{ padding: '0.75rem' }}>
-                <Plus size={20} />
+              <button 
+                onClick={addDrug}
+                className="btn-primary"
+                style={{ padding: '0 1rem', borderRadius: '0.5rem' }}
+              >
+                <Plus size={24} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Selected Regimen Pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
           {selectedDrugs.map(name => (
-            <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '2rem', color: 'var(--text-primary)' }}>
-              <span style={{ fontWeight: 600 }}>{name}</span>
-              <Trash2 size={14} style={{ cursor: 'pointer', color: 'var(--accent-danger)' }} onClick={() => removeDrug(name)} />
+            <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', padding: '0.5rem 1rem', borderRadius: '2rem', border: '1px solid rgba(59, 130, 246, 0.2)', fontWeight: 600 }}>
+              {name}
+              <button onClick={() => removeDrug(name)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0 }}>
+                <Trash2 size={16} />
+              </button>
             </div>
           ))}
-          {selectedDrugs.length === 0 && (
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic' }}>No drugs added yet. Use the search above.</p>
-          )}
+          {selectedDrugs.length === 0 && <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No drugs selected yet...</p>}
         </div>
-        
+
         <button 
-          className="btn-primary" 
-          onClick={handleCheck}
+          onClick={handleAnalyze}
           disabled={selectedDrugs.length < 2 || loading}
-          style={{ width: '100%', padding: '1rem', fontSize: '1.125rem' }}
+          className="btn-primary"
+          style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
         >
-          {loading ? 'Analyzing Neural Linkages...' : 'Check Interaction'}
+          {loading ? 'Analyzing Complexity...' : 'Analyze Regimen'}
         </button>
 
-        {error && (
-          <div style={{ color: 'var(--accent-danger)', marginTop: '1.5rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '0.5rem', textAlign: 'center' }}>
-            {error}
-          </div>
-        )}
+        {error && <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', borderRadius: '0.5rem', textAlign: 'center' }}>{error}</div>}
       </div>
 
-      {loading && (
-        <div className="loader-container">
-          <div className="loader"></div>
-        </div>
-      )}
+      {analysis && !loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.5s ease' }}>
+          
+          {/* Summary Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div className="glass-card" style={{ borderTop: `4px solid ${getRiskColor(analysis.overall_risk_label)}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <ShieldAlert style={{ color: getRiskColor(analysis.overall_risk_label) }} />
+                <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Interaction Risk</h3>
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: getRiskColor(analysis.overall_risk_label) }}>
+                {analysis.overall_risk_label}
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Based on {analysis.interactions.length} analyzed pair(s)</p>
+            </div>
 
-      {regimenRisk && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* Regimen Summary Card */}
-          <div className="glass-card" style={{ borderLeft: `4px solid ${getRiskUIProps(regimenRisk).color}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ color: getRiskUIProps(regimenRisk).color }}>
-                  {getRiskUIProps(regimenRisk).icon}
-                </div>
-                <div>
-                  <h3 className="stat-label" style={{ marginBottom: '0.25rem' }}>Regimen Safety Profile</h3>
-                  <div style={{ fontSize: '2rem', fontWeight: '800', color: getRiskUIProps(regimenRisk).color }}>
-                    {regimenRisk} Combined Risk
-                  </div>
-                </div>
+            <div className="glass-card" style={{ borderTop: '4px solid var(--accent-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <Leaf style={{ color: 'var(--accent-secondary)' }} />
+                <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Eco Score</h3>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <h3 className="stat-label" style={{ marginBottom: '0.25rem' }}>Regimen Composition</h3>
-                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{selectedDrugs.join(' + ')}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--accent-secondary)' }}>{analysis.eco_score.toFixed(1)}/100</div>
+              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', marginTop: '0.75rem', overflow: 'hidden' }}>
+                <div style={{ width: `${analysis.eco_score}%`, height: '100%', background: 'linear-gradient(to right, #10b981, #34d399)' }}></div>
               </div>
+            </div>
+
+            <div className="glass-card" style={{ borderTop: '4px solid var(--accent-warning)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <DollarSign style={{ color: 'var(--accent-warning)' }} />
+                <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Cost</h3>
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)' }}>${analysis.total_cost.toFixed(2)}</div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Monthly estimate for regimen</p>
             </div>
           </div>
 
-          {/* Risk Matrix Title */}
-          <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <LayoutGrid size={24} color="var(--accent-primary)" />
-            Regimen Interaction Matrix
-          </h3>
+          {/* Interaction Details */}
+          <div className="glass-card">
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <LayoutGrid color="var(--accent-primary)" /> Interaction Breakdown
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {analysis.interactions.map((it, idx) => (
+                <div key={idx} style={{ padding: '1.25rem', borderRadius: '0.75rem', background: 'rgba(0,0,0,0.15)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{it.pair[0]} + {it.pair[1]}</h4>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', padding: '0.25rem 0.5rem', borderRadius: '4px', background: `${getRiskColor(it.label)}20`, color: getRiskColor(it.label), border: `1px solid ${getRiskColor(it.label)}40` }}>
+                      {it.label} Risk
+                    </span>
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>{it.explanation}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.5rem' }}>
-            {results.map((res, idx) => (
-              <div key={idx} className="glass-card" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.03)', border: `1px solid ${getRiskUIProps(res.interaction_risk).color}22` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{res.pair[0]} ↔ {res.pair[1]}</div>
-                  <span className="badge" style={{ background: `${getRiskUIProps(res.interaction_risk).color}22`, color: getRiskUIProps(res.interaction_risk).color }}>
-                    {res.interaction_risk}
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                  {res.recommendation}
-                </p>
-                <div style={{ marginTop: '1rem', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                  <div style={{ width: `${res.combined_toxicity_estimate * 100}%`, height: '100%', background: getRiskUIProps(res.interaction_risk).color, borderRadius: '2px' }} />
-                </div>
+          {/* Recommendations */}
+          <div style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(167, 139, 250, 0.1))', padding: '2rem', borderRadius: '1rem', border: '1px solid rgba(167, 139, 250, 0.2)' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-primary)' }}>
+              <Lightbulb color="#fbbf24" /> Sustainable Recommendations
+            </h2>
+            {analysis.recommendations.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {analysis.recommendations.map((rec, idx) => (
+                  <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Substitution for {rec.original}</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                      Try <span style={{ color: 'var(--accent-secondary)', textDecoration: 'underline' }}>{rec.suggested}</span>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{rec.reason}</p>
+                    <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>
+                      <span style={{ color: 'var(--accent-secondary)' }}>+{rec.eco_benefit.toFixed(0)}% Eco Benefit</span>
+                      <span style={{ color: rec.cost_diff <= 0 ? 'var(--accent-primary)' : 'var(--accent-warning)' }}>
+                        {rec.cost_diff <= 0 ? `$${Math.abs(rec.cost_diff).toFixed(2)} cheaper` : `$${rec.cost_diff.toFixed(2)} more`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No specific alternatives found. Your current regimen selections are among the most sustainable in their class.</p>
+            )}
           </div>
         </div>
       )}
+
+      {/* Verified Sources Authentication Section */}
+      <div style={{ marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>
+          Data Authenticity & Verified Sources
+        </h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2rem', opacity: 0.7 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+            <CheckCircle size={16} color="var(--accent-secondary)" /> EMA Environmental Risk
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+            <CheckCircle size={16} color="var(--accent-secondary)" /> Sustainable Healthcare Coalition
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+            <CheckCircle size={16} color="var(--accent-secondary)" /> PubChem Molecular Data
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+            <CheckCircle size={16} color="var(--accent-secondary)" /> NHS SDU Costing Models
+          </div>
+        </div>
+        <p style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', maxWidth: '800px', margin: '1.5rem auto 0', lineHeight: '1.6' }}>
+          Sustainability scores and interaction profiles are generated using a high-fidelity simulation model predicated on 
+          standardized ETR (Environmental Toxicity Rating) and PBT (Persistence, Bioaccumulation, Toxicity) benchmarks from the sources cited above.
+        </p>
+      </div>
     </div>
   );
 };

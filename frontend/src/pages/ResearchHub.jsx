@@ -58,10 +58,16 @@ const ResearchHub = () => {
   const [loading, setLoading] = useState(false);
   const [lipinski, setLipinski] = useState(null);
   const [activeTab, setActiveTab] = useState('lipinski');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadDrugs = async () => {
       const data = await fetchDrugs();
+      if (data.length === 0) {
+        setError("Database unreachable. Please ensure the backend server is running on port 5000.");
+      } else {
+        setError(null);
+      }
       setDrugs(data.sort((a, b) => a.drug_name.localeCompare(b.drug_name)));
     };
     loadDrugs();
@@ -110,6 +116,12 @@ const ResearchHub = () => {
           <button className="btn-primary" style={{ width: '100%' }} onClick={handleAnalyze} disabled={!selectedDrug || loading}>
             {loading ? 'Loading...' : 'Analyze Compound'}
           </button>
+
+          {error && (
+            <div style={{ color: 'var(--accent-danger)', marginTop: '1rem', padding: '0.75rem', fontSize: '0.85rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '0.5rem' }}>
+              {error}
+            </div>
+          )}
 
           {/* External Links */}
           {selectedDrug && (
