@@ -163,22 +163,6 @@ const ComparisonDashboard = () => {
       {results && !loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.5s ease' }}>
           
-          {/* SIMILARITY TOP SCORE (Researcher Only) */}
-          {similarityScore !== null && role === 'researcher' && (
-             <div className="glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <Share2 size={48} color="var(--accent-primary)" />
-                <div>
-                  <h3 style={{ color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
-                    <Tooltip term="Tanimoto Similarity" explanation="Calculated using Morgan Fingerprints (Radius 2). Measures structural overlap between two molecules.">Chemical Structure Similarity</Tooltip>
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                     <span style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{(similarityScore * 100).toFixed(1)}%</span>
-                     <span style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>homology</span>
-                  </div>
-                </div>
-             </div>
-          )}
-
           {/* MAIN TABLE */}
           <div className="glass-card" style={{ padding: 0, overflow: 'x-auto' }}>
             <table>
@@ -259,57 +243,6 @@ const ComparisonDashboard = () => {
                 )}
               </tbody>
             </table>
-          </div>
-
-          {/* PATIENT SCENARIO SIMULATOR */}
-          <div className="glass-card" style={{ borderLeft: '4px solid #a78bfa' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <Users size={32} color="#a78bfa" />
-                <h3 style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>Patient Scenario Analysis</h3>
-             </div>
-             
-             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                Simulate a patient profile to view educational pharmacological reasoning contrasting these two agents. <strong style={{ color: 'var(--accent-warning)' }}>For educational chemistry/pharmacology purposes only, not clinical advice.</strong>
-             </p>
-
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Age Group</label>
-                  <select className="form-select" value={scenarioAge} onChange={(e) => setScenarioAge(e.target.value)}>
-                    <option>Adult</option>
-                    <option>Elderly</option>
-                    <option>Pediatric</option>
-                  </select>
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Condition</label>
-                  <select className="form-select" value={scenarioCondition} onChange={(e) => setScenarioCondition(e.target.value)}>
-                    <option>Osteoarthritis</option>
-                    <option>Rheumatoid Arthritis</option>
-                    <option>Acute Strain/Sprain</option>
-                    <option>Post-operative Pain</option>
-                  </select>
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Duration</label>
-                  <select className="form-select" value={scenarioDuration} onChange={(e) => setScenarioDuration(e.target.value)}>
-                    <option>Acute (Days)</option>
-                    <option>Chronic (Months/Years)</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
-                   <button className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' }} onClick={runScenario}>
-                     Simulate
-                   </button>
-                </div>
-             </div>
-
-             {scenarioAnalysis && (
-                <div style={{ padding: '1.5rem', background: 'rgba(167, 139, 250, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(167, 139, 250, 0.3)', whiteSpace: 'pre-line', lineHeight: '1.7' }}>
-                   {scenarioAnalysis}
-                </div>
-             )}
-
           </div>
 
         </div>

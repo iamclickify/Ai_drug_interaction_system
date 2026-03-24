@@ -67,8 +67,8 @@ const InteractionChecker = () => {
   };
 
   return (
-    <div className="container">
-      <h1 className="page-title">Drug Interaction AI</h1>
+    <div className="container" style={{ animation: 'fadeIn 0.5s ease' }}>
+      <h1 className="page-title">Pharmaguide AI: Drug Interaction Checker</h1>
       <p className="page-subtitle">Analyze clinical interaction risks, environmental toxicity, and cost impact for complex drug regimens.</p>
 
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
@@ -138,23 +138,29 @@ const InteractionChecker = () => {
             </div>
 
             <div className="glass-card" style={{ borderTop: '4px solid var(--accent-secondary)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <Leaf style={{ color: 'var(--accent-secondary)' }} />
-                <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Eco Score</h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Leaf style={{ color: 'var(--accent-secondary)' }} />
+                  <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Eco Score</h3>
+                </div>
+                {analysis.api_sourced && <span style={{ fontSize: '0.6rem', background: 'var(--accent-secondary)', color: '#000', padding: '1px 4px', borderRadius: '3px', fontWeight: 900 }}>API AUTH</span>}
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--accent-secondary)' }}>{analysis.eco_score.toFixed(1)}/100</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--accent-secondary)' }}>{(analysis.eco_score || 0).toFixed(1)}/100</div>
               <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', marginTop: '0.75rem', overflow: 'hidden' }}>
-                <div style={{ width: `${analysis.eco_score}%`, height: '100%', background: 'linear-gradient(to right, #10b981, #34d399)' }}></div>
+                <div style={{ width: `${analysis.eco_score || 0}%`, height: '100%', background: 'linear-gradient(to right, #10b981, #34d399)' }}></div>
               </div>
             </div>
 
             <div className="glass-card" style={{ borderTop: '4px solid var(--accent-warning)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <DollarSign style={{ color: 'var(--accent-warning)' }} />
-                <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Cost</h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <DollarSign style={{ color: 'var(--accent-warning)' }} />
+                  <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Cost</h3>
+                </div>
+                {analysis.api_sourced && <span style={{ fontSize: '0.6rem', background: 'var(--accent-warning)', color: '#000', padding: '1px 4px', borderRadius: '3px', fontWeight: 900 }}>LIVE DATA</span>}
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)' }}>${analysis.total_cost.toFixed(2)}</div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Monthly estimate for regimen</p>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)' }}>${(analysis.total_cost || 0).toFixed(2)}</div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Verified via {analysis.api_metadata?.source || 'Internal DB'}</p>
             </div>
           </div>
 
@@ -172,12 +178,32 @@ const InteractionChecker = () => {
                       {it.label} Risk
                     </span>
                   </div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>{it.explanation}</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>{it.explanation}</p>
+                  
+                  {it.mechanism && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '6px', borderLeft: '3px solid var(--accent-primary)' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', textTransform: 'uppercase', fontWeight: 800, display: 'block', marginBottom: '0.25rem' }}>Mechanism of Action:</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{it.mechanism}</span>
+                    </div>
+                  )}
+                  
+                  {it.feasibility && (
+                    <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Regimen Feasibility:</span>
+                      <span style={{ 
+                        fontSize: '0.85rem', 
+                        fontWeight: 900, 
+                        color: it.feasibility === 'Feasible' ? 'var(--accent-secondary)' : it.feasibility === 'Caution' ? 'var(--accent-warning)' : 'var(--accent-danger)' 
+                      }}>
+                        {it.feasibility.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
-
+          
           {/* Recommendations */}
           <div style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(167, 139, 250, 0.1))', padding: '2rem', borderRadius: '1rem', border: '1px solid rgba(167, 139, 250, 0.2)' }}>
             <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-primary)' }}>
@@ -204,6 +230,58 @@ const InteractionChecker = () => {
             ) : (
               <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No specific alternatives found. Your current regimen selections are among the most sustainable in their class.</p>
             )}
+          </div>
+
+          {/* Transparency Guide & Cost Analysis */}
+          <div className="glass-card" style={{ background: 'rgba(0,0,0,0.2)' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <ShieldAlert color="var(--accent-secondary)" /> Eco-Impact & Cost Analysis Guide
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', color: 'var(--accent-secondary)', marginBottom: '1rem' }}>Eco Score Calculation</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '1rem' }}>
+                  The Pharmaguide Eco-Score (0-100) is a composite index derived from three high-fidelity environmental benchmarks:
+                </p>
+                <ul style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', listStyleType: 'none', padding: 0 }}>
+                  <li style={{ marginBottom: '0.5rem' }}>
+                    <strong>1. Eco-Toxicity (33%):</strong> Measures the biological impact on aquatic and terrestrial ecosystems during manufacturing and excretion.
+                  </li>
+                  <li style={{ marginBottom: '0.5rem' }}>
+                    <strong>2. Biodegradability (33%):</strong> The rate at which the compound breaks down into non-toxic metabolites in standard wastewater treatment.
+                  </li>
+                  <li style={{ marginBottom: '0.5rem' }}>
+                    <strong>3. Persistence (33%):</strong> The temporal duration the compound remains active in the environment before degradation.
+                  </li>
+                </ul>
+                <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem', marginTop: '1rem', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                  Formula: ((10 - Toxicity) + Biodeg + (10 - Persist)) / 30 * 100
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '1rem', color: 'var(--accent-warning)', marginBottom: '1rem' }}>Cost Breakdown Analysis</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '1rem' }}>
+                  Estimated monthly financial impact based on standardized NHS SDU costing models and current pharmaceutical benchmarks:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {analysis.drug_details.map(d => (
+                    <div key={d.drug_name} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.4rem' }}>
+                      <span style={{ fontSize: '0.85rem' }}>{d.drug_name}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>${(d.individual_cost || 0).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '0.5rem' }}>
+                    <span style={{ fontWeight: 700 }}>Total Regimen Cost</span>
+                    <span style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-primary)' }}>${(analysis.total_cost || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1rem', fontStyle: 'italic' }}>
+                  *Analysis assumes standard maintenance dosages. Cost varies by fulfillment channel and geography.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

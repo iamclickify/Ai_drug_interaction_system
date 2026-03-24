@@ -15,7 +15,7 @@ const Navbar = () => {
         <div className="container nav-container">
            <Link to="/" className="nav-logo">
              <Activity className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-             NSAID Analysis Platform
+             Pharmaguide AI
            </Link>
         </div>
       </nav>
@@ -46,7 +46,7 @@ const Navbar = () => {
         
         <Link to="/" className="nav-logo">
           <Activity className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-          NSAID Database
+          Pharmaguide AI
           <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', background: role === 'consumer' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(167, 139, 250, 0.15)', padding: '0.2rem 0.5rem', borderRadius: '4px', marginLeft: '0.5rem', color: role === 'consumer' ? '#60a5fa' : '#a78bfa' }}>
             {role}
           </span>

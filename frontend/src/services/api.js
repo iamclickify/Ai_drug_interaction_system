@@ -34,8 +34,25 @@ export const predictDrug = async (drugName) => {
       toxicity_risk: res.overall_risk_label,
       effectiveness_score: 85,
       sustainability_score: res.eco_score,
-      // Use real descriptors if available
-      descriptors: details.descriptors || [300, 2.5, 2, 4, 70, 5], 
+      // Priority: use specific fields if available, otherwise fallback to array
+      weight: details.molecular_weight || details.weight || (details.descriptors ? details.descriptors[0] : 300),
+      logp: details.logp !== undefined ? details.logp : (details.descriptors ? details.descriptors[1] : 2.5),
+      hbd: details.hbd !== undefined ? details.hbd : (details.descriptors ? details.descriptors[2] : 2),
+      hba: details.hba !== undefined ? details.hba : (details.descriptors ? details.descriptors[3] : 4),
+      tpsa: details.tpsa !== undefined ? details.tpsa : (details.descriptors ? details.descriptors[4] : 70),
+      rb: details.rotatable_bonds !== undefined ? details.rotatable_bonds : (details.descriptors ? details.descriptors[5] : 5),
+      mr: details.molar_refractivity !== undefined ? details.molar_refractivity : (details.descriptors ? details.descriptors[6] : 60),
+      descriptors: details.descriptors || [
+        details.molecular_weight || 300,
+        details.logp || 2.5,
+        details.hbd || 2,
+        details.hba || 4,
+        details.tpsa || 70,
+        details.rotatable_bonds || 5,
+        details.molar_refractivity || 60
+      ],
+      eco_components: details.eco_components || { toxicity: 5, biodegradability: 5, persistence: 5 },
+      individual_cost: details.individual_cost || 10,
       iupac_name: details.iupac_name || "Generic IUPAC Name",
       smiles: details.smiles || "C1=CC=CC=C1"
     };
@@ -68,22 +85,43 @@ export const getBrandMap = () => {
   return {
     "Advil": "Ibuprofen",
     "Motrin": "Ibuprofen",
+    "Nurofen": "Ibuprofen",
+    "Brufen": "Ibuprofen",
     "Aleve": "Naproxen",
     "Naprosyn": "Naproxen",
+    "Anaprox": "Naproxen",
     "Aspirin": "Aspirin",
     "Bayer": "Aspirin",
-    "Excedrin": "Aspirin", // (mixed, but contains aspirin)
-    "Tylenol": "Acetaminophen", // Not an NSAID, but crucial for collision detection
+    "Excedrin": "Aspirin",
+    "Ecotrin": "Aspirin",
+    "Tylenol": "Acetaminophen",
+    "Panadol": "Acetaminophen",
+    "Calpol": "Acetaminophen",
     "NyQuil": "Acetaminophen",
     "DayQuil": "Acetaminophen",
     "Theraflu": "Acetaminophen",
     "Voltaren": "Diclofenac",
     "Cataflam": "Diclofenac",
+    "Zipsor": "Diclofenac",
     "Celebrex": "Celecoxib",
+    "Celebra": "Celecoxib",
     "Mobic": "Meloxicam",
+    "Vivlodex": "Meloxicam",
     "Indocin": "Indomethacin",
+    "Tivorbex": "Indomethacin",
     "Toradol": "Ketorolac",
+    "Sprix": "Ketorolac",
     "Feldene": "Piroxicam",
-    "Relafen": "Nabumetone"
+    "Relafen": "Nabumetone",
+    "Lodine": "Etodolac",
+    "Daypro": "Oxaprozin",
+    "Disalcid": "Salsalate",
+    "Clinoril": "Sulindac",
+    "Tolectin": "Tolmetin",
+    "Ponstel": "Mefenamic Acid",
+    "Meclomen": "Meclofenamate",
+    "Orudis": "Ketoprofen",
+    "Oruvail": "Ketoprofen",
+    "Ansaid": "Flurbiprofen"
   };
 };

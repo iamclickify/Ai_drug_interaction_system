@@ -27,6 +27,7 @@ const ConsumerDashboard = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [nlpText, setNlpText] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadDrugs = async () => {
@@ -67,8 +68,10 @@ const ConsumerDashboard = () => {
       'rheumat': 'Rheumatoid Arthritis'
     };
 
+    let newPainType = painType;
     for (const [key, value] of Object.entries(symptomMap)) {
       if (text.includes(key)) {
+        newPainType = value;
         setPainType(value);
       }
     }
@@ -96,38 +99,98 @@ const ConsumerDashboard = () => {
       'gastric': 'stomachUlcers'
     };
 
+    let newConditions = [...selectedConditions];
     Object.entries(conditionKeywords).forEach(([key, id]) => {
       if (text.includes(key)) {
-        if (!selectedConditions.includes(id)) {
-          toggleCondition(id);
+        if (!newConditions.includes(id)) {
+          newConditions.push(id);
         }
       }
     });
+    setSelectedConditions(newConditions);
 
+    let newSeverity = severity;
     if (text.includes('bad') || text.includes('severe') || text.includes('extreme') || text.includes('kill')) {
+      newSeverity = 'Severe';
       setSeverity('Severe');
     } else if (text.includes('mild') || text.includes('little') || text.includes('slight')) {
+      newSeverity = 'Mild';
       setSeverity('Mild');
     }
 
+    let newDuration = duration;
     if (text.includes('chronic') || text.includes('long') || text.includes('year') || text.includes('month')) {
+      newDuration = 'Chronic (Months to Years)';
       setDuration('Chronic (Months to Years)');
     } else if (text.includes('acute') || text.includes('start') || text.includes('just')) {
+      newDuration = 'Acute (A few days)';
       setDuration('Acute (A few days)');
     }
     
-    // Trigger search after NLP update
-    handleSearch();
+    // Call backend for actual drug suggestions using TF-IDF
+    handleBackendNLP(text, newConditions);
+  };
+
+  const handleBackendNLP = async (query, pConditions) => {
+    setLoading(true);
+    setHasSearched(true);
+    try {
+      const resp = await fetch('http://localhost:5000/analyze_symptoms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      const data = await resp.json();
+      
+      if (data.suggestions && data.suggestions.length > 0) {
+        // Map backend results to full drug objects and apply safety filters
+        let results = data.suggestions.map(sug => drugs.find(d => d.drug_name === sug.drug_name)).filter(Boolean);
+        
+        // Apply safety filters (same as executeSearch)
+        if (pConditions.includes('pregnant')) {
+          results = results.filter(d => d.drug_name === 'Celecoxib' || d.drug_name === 'Acetaminophen');
+        }
+        if (pConditions.includes('bloodThinners')) {
+          results = results.filter(d => d.drug_name !== 'Aspirin' && d.drug_name !== 'Ketorolac');
+        }
+        if (pConditions.includes('stomachUlcers')) {
+          const cox2 = results.filter(d => ['Celecoxib', 'Meloxicam'].includes(d.drug_name));
+          if (cox2.length > 0) results = cox2;
+        }
+
+        // Sync painType and severity for report generation
+        if (data.suggestions[0]?.category) {
+          setPainType(data.suggestions[0].category);
+        }
+
+        setSuggestedDrugs(results.slice(0, 3).map((d, i) => ({
+          ...d,
+          confidence: data.suggestions.find(s => s.drug_name === d.drug_name)?.confidence || 0
+        })));
+      } else {
+        // Fallback to keyword search if TF-IDF fails
+        executeSearch(painType, severity, duration, pConditions);
+      }
+    } catch (err) {
+      console.error("NLP error:", err);
+      executeSearch(painType, severity, duration, pConditions);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearch = () => {
+    executeSearch(painType, severity, duration, selectedConditions);
+  };
+
+  const executeSearch = (pType, pSeverity, pDuration, pConditions) => {
     let filtered = [];
     
     const getDrug = (name) => drugs.find(d => d.drug_name.toLowerCase() === name.toLowerCase());
     
-    if (duration.includes('Chronic') || painType.includes('Arthritis')) {
+    if (pDuration.includes('Chronic') || pType.includes('Arthritis')) {
       filtered = ['Meloxicam', 'Celecoxib', 'Naproxen', 'Diclofenac'].map(getDrug).filter(Boolean);
-    } else if (severity === 'Mild' || severity === 'Moderate') {
+    } else if (pSeverity === 'Mild' || pSeverity === 'Moderate') {
       filtered = ['Ibuprofen', 'Naproxen', 'Aspirin'].map(getDrug).filter(Boolean);
     } else {
       filtered = ['Ketorolac', 'Diclofenac', 'Indomethacin', 'Ibuprofen'].map(getDrug).filter(Boolean);
@@ -235,7 +298,7 @@ const ConsumerDashboard = () => {
 
   return (
     <div className="container">
-      <h1 className="page-title">Symptom Solver & Pain Reliever Guide</h1>
+      <h1 className="page-title">Pharmaguide AI: Symptom Solver</h1>
       <p className="page-subtitle" style={{ maxWidth: '800px', marginBottom: '2rem' }}>
         Learn about common <GlossaryTooltip term="OTC">over-the-counter</GlossaryTooltip> and prescription pain relievers. 
         Tell us what you are feeling to see educational breakdowns of medications commonly used for that scenario.
@@ -319,21 +382,6 @@ const ConsumerDashboard = () => {
               <option>Male</option>
               <option>Female</option>
               <option>Prefer not to say</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Primary Symptom</label>
-            <select className="form-select" value={painType} onChange={e => setPainType(e.target.value)}>
-              <option>Headache / Migraine</option>
-              <option>Muscle Strain / Sprain</option>
-              <option>Osteoarthritis / Joint Pain</option>
-              <option>Rheumatoid Arthritis</option>
-              <option>Menstrual Cramps</option>
-              <option>Fever</option>
-              <option>Back Pain</option>
-              <option>Dental Pain</option>
-              <option>Post-Surgery Pain</option>
             </select>
           </div>
 
@@ -422,8 +470,25 @@ const ConsumerDashboard = () => {
                 </button>
               </div>
               
-              {suggestedDrugs.length === 0 ? (
-                 <div className="glass-card">No matching medications found for this profile. Make sure the database is running and connected.</div>
+              {loading ? (
+                <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
+                  <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+                  <p style={{ color: 'var(--text-secondary)' }}>Our AI is analyzing your symptoms against 111+ medications...</p>
+                </div>
+              ) : suggestedDrugs.length === 0 ? (
+                <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed var(--glass-border)' }}>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <Search size={48} color="var(--text-secondary)" style={{ opacity: 0.5 }} />
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>No direct matches found</h3>
+                  <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 1.5rem', lineHeight: '1.6' }}>
+                    We couldn't find a specific medication for those exact symptoms. Try describing the pain differently (e.g. "headache" or "stomach burn") or consult a professional.
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                    <button onClick={() => setNlpText("headache")} className="btn-secondary" style={{ fontSize: '0.8rem' }}>Try "headache"</button>
+                    <button onClick={() => setNlpText("stomach burn")} className="btn-secondary" style={{ fontSize: '0.8rem' }}>Try "stomach burn"</button>
+                  </div>
+                </div>
               ) : (
                 suggestedDrugs.map((drug, idx) => {
                   const allBrands = getBrandMap();
@@ -460,6 +525,24 @@ const ConsumerDashboard = () => {
                         </div>
                         <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.2rem', textTransform: 'uppercase' }}>Safety</span>
                       </div>
+
+                      {/* AI Confidence Badge */}
+                      {drug.confidence > 0 && (
+                        <div style={{ 
+                          position: 'absolute', 
+                          top: '1rem', 
+                          right: '1rem',
+                          background: 'rgba(59, 130, 246, 0.2)',
+                          color: 'var(--accent-primary)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.7rem',
+                          fontWeight: 800,
+                          border: '1px solid rgba(59, 130, 246, 0.3)'
+                        }}>
+                          {drug.confidence}% MATCH
+                        </div>
+                      )}
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <div>

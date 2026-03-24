@@ -6,12 +6,14 @@ class Drug(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     drug_name = Column(String, unique=True, index=True)
+    brand_name = Column(String, nullable=True)
     category = Column(String)
     eco_toxicity = Column(Float)
     biodegradability = Column(Float)
     persistence = Column(Float)
     cost = Column(Float)
     clinical_use = Column(String, nullable=True)
+    symptoms = Column(String, nullable=True) # Common symptoms treated (e.g., headache, fever)
     
     # Research Fields
     iupac_name = Column(String, nullable=True)
@@ -28,6 +30,7 @@ class Drug(Base):
     hba = Column(Integer, nullable=True)
     tpsa = Column(Float, nullable=True)
     rotatable_bonds = Column(Integer, nullable=True)
+    molar_refractivity = Column(Float, nullable=True)
 
 class Interaction(Base):
     __tablename__ = "interactions"
@@ -38,3 +41,5 @@ class Interaction(Base):
     severity_score = Column(Float)
     label = Column(String) # Low, Moderate, High
     explanation = Column(String)
+    mechanism = Column(String, nullable=True) # Physiological mechanism (e.g., CYP450 inhibition)
+    feasibility = Column(String, nullable=True) # Feasible, Caution, Infeasible

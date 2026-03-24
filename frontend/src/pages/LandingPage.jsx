@@ -20,7 +20,7 @@ const LandingPage = () => {
     <div className="container" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
       <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
         <h1 style={{ fontSize: '3rem', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          NSAID Analysis Platform
+          Pharmaguide AI
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem' }}>
           Select your portal to begin exploring Nonsteroidal Anti-inflammatory Drugs.

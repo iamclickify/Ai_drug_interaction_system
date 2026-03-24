@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { fetchDrugs, predictDrug } from '../services/api';
 import { BookOpen, ExternalLink, CheckCircle, XCircle, Download, Clock } from 'lucide-react';
-import LiteratureBridge from '../components/LiteratureBridge';
 import GlossaryTooltip from '../components/GlossaryTooltip';
 
-const lipinskiRules = (descriptors, weight) => {
-  if (!descriptors || descriptors.length < 5) return null;
-  const mw = weight || descriptors[0];
-  const logP = descriptors[1];
-  const hbd = descriptors[2];
-  const hba = descriptors[3];
+const lipinskiRules = (drug) => {
+  if (!drug) return null;
+  const mw = drug.weight || (drug.descriptors ? drug.descriptors[0] : 0);
+  const logP = drug.logp !== undefined ? drug.logp : (drug.descriptors ? drug.descriptors[1] : 0);
+  const hbd = drug.hbd !== undefined ? drug.hbd : (drug.descriptors ? drug.descriptors[2] : 0);
+  const hba = drug.hba !== undefined ? drug.hba : (drug.descriptors ? drug.descriptors[3] : 0);
+  const mr = drug.mr !== undefined ? drug.mr : (drug.descriptors && drug.descriptors.length > 6 ? drug.descriptors[6] : 60);
   
   return [
     { rule: 'Molecular Weight ≤ 500 Da', value: `${mw.toFixed(1)} Da`, pass: mw <= 500 },
     { rule: 'LogP ≤ 5', value: logP.toFixed(2), pass: logP <= 5 },
     { rule: 'H-Bond Donors ≤ 5', value: hbd.toString(), pass: hbd <= 5 },
-    { rule: 'H-Bond Acceptors ≤ 10', value: hba.toString(), pass: hba <= 10 }
+    { rule: 'H-Bond Acceptors ≤ 10', value: hba.toString(), pass: hba <= 10 },
+    { rule: 'Molar Refractivity (40-130)', value: mr.toFixed(1), pass: mr >= 40 && mr <= 130 }
   ];
 };
 
@@ -79,7 +80,7 @@ const ResearchHub = () => {
     try {
       const result = await predictDrug(selectedDrug);
       setPrediction(result);
-      const rules = lipinskiRules(result.descriptors, result.weight);
+      const rules = lipinskiRules(result);
       setLipinski(rules);
     } catch (err) {
       console.error(err);
@@ -199,12 +200,12 @@ const ResearchHub = () => {
                     Lipinski's <GlossaryTooltip term="Ro5">Rule of Five</GlossaryTooltip> predicts oral <GlossaryTooltip term="Bioavailability">bioavailability</GlossaryTooltip>. A drug is likely to be poorly absorbed if it violates 2 or more rules. This is a key filter in early-stage drug discovery.
                   </p>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
                     {lipinski.map((rule, idx) => (
                       <div key={idx} style={{ padding: '1.25rem', background: rule.pass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: '0.75rem', border: `1px solid ${rule.pass ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, textAlign: 'center' }}>
-                        {rule.pass ? <CheckCircle size={24} color="var(--accent-secondary)" /> : <XCircle size={24} color="var(--accent-danger)" />}
-                        <div style={{ fontSize: '1.75rem', fontWeight: 700, color: rule.pass ? 'var(--accent-secondary)' : 'var(--accent-danger)', margin: '0.5rem 0' }}>{rule.value}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{rule.rule}</div>
+                        {rule.pass ? <CheckCircle size={20} color="var(--accent-secondary)" /> : <XCircle size={20} color="var(--accent-danger)" />}
+                        <div style={{ fontSize: '1.5rem', fontWeight: 700, color: rule.pass ? 'var(--accent-secondary)' : 'var(--accent-danger)', margin: '0.4rem 0' }}>{rule.value}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{rule.rule}</div>
                       </div>
                     ))}
                   </div>
@@ -244,7 +245,8 @@ const ResearchHub = () => {
                         { name: 'H-Bond Donors', value: prediction.descriptors[2], sig: <GlossaryTooltip term="HBD">Affects permeability.</GlossaryTooltip> },
                         { name: 'H-Bond Acceptors', value: prediction.descriptors[3], sig: <GlossaryTooltip term="HBA">Affects solubility.</GlossaryTooltip> },
                         { name: 'TPSA', value: `${prediction.descriptors[4].toFixed(2)} Å²`, sig: <GlossaryTooltip term="TPSA">Topological polar surface area.</GlossaryTooltip> },
-                        { name: 'Rotatable Bonds', value: prediction.descriptors[5], sig: 'Molecular flexibility.' }
+                        { name: 'Rotatable Bonds', value: prediction.descriptors[5], sig: 'Molecular flexibility.' },
+                        { name: 'Molar Refractivity', value: prediction.mr !== undefined ? prediction.mr.toFixed(2) : (prediction.descriptors[6] ? prediction.descriptors[6].toFixed(2) : '60.00'), sig: 'Measures molecular polarizability and volume.' }
                       ].map(d => (
                         <tr key={d.name}>
                           <td style={{ fontWeight: 600 }}>{d.name}</td>
@@ -289,8 +291,6 @@ const ResearchHub = () => {
                 </div>
               )}
 
-              {/* Research Bridge */}
-              <LiteratureBridge activeDrug={selectedDrug} />
             </div>
           )}
         </div>

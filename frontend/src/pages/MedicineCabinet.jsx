@@ -59,9 +59,15 @@ const MedicineCabinet = () => {
 
   return (
     <div className="container">
-      <h1 className="page-title">Medicine Cabinet Scanner</h1>
+      <h1 className="page-title">Pharmaguide AI: Medicine Cabinet Scan</h1>
+      <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--accent-danger)', padding: '1rem', borderRadius: '0.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+         <AlertTriangle color="var(--accent-danger)" size={24} />
+         <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+            DISCLAIMER: This tool is for EDUCATIONAL PURPOSES ONLY. It is designed to help you understand active ingredients in common products. NEVER change your medication regimen without consulting a licensed physician or pharmacist.
+         </p>
+      </div>
       <p className="page-subtitle" style={{ maxWidth: '800px', marginBottom: '2rem' }}>
-        Add all the over-the-counter pain relievers or cold medicines you are currently taking to check for accidental double-dosing.
+        Add your brand-name medications to decode their active ingredients and check for safety overlaps.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
