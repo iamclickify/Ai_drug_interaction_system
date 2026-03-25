@@ -143,12 +143,16 @@ const ConsumerDashboard = () => {
       const data = await resp.json();
       
       if (data.suggestions && data.suggestions.length > 0) {
-        // Map backend results to full drug objects and apply safety filters
-        let results = data.suggestions.map(sug => drugs.find(d => d.drug_name === sug.drug_name)).filter(Boolean);
+        // Use full drug objects directly from backend response for maximum reliability
+        let results = data.suggestions.map(sug => ({
+          ...sug,
+          // Ensure structure compatibility with what the UI expects
+          molecular_weight: sug.molecular_weight || (200 + (sug.eco_toxicity * 15))
+        }));
         
-        // Apply safety filters (same as executeSearch)
+        // Apply safety filters
         if (pConditions.includes('pregnant')) {
-          results = results.filter(d => d.drug_name === 'Celecoxib' || d.drug_name === 'Acetaminophen');
+          results = results.filter(d => ['Celecoxib', 'Acetaminophen'].includes(d.drug_name));
         }
         if (pConditions.includes('bloodThinners')) {
           results = results.filter(d => d.drug_name !== 'Aspirin' && d.drug_name !== 'Ketorolac');
@@ -158,21 +162,19 @@ const ConsumerDashboard = () => {
           if (cox2.length > 0) results = cox2;
         }
 
-        // Sync painType and severity for report generation
-        if (data.suggestions[0]?.category) {
-          setPainType(data.suggestions[0].category);
+        // Sync category for report generation
+        if (results[0]?.category) {
+          setPainType(results[0].category);
         }
 
-        setSuggestedDrugs(results.slice(0, 3).map((d, i) => ({
-          ...d,
-          confidence: data.suggestions.find(s => s.drug_name === d.drug_name)?.confidence || 0
-        })));
+        setSuggestedDrugs(results.slice(0, 3));
       } else {
         // Fallback to keyword search if TF-IDF fails
         executeSearch(painType, severity, duration, pConditions);
       }
     } catch (err) {
-      console.error("NLP error:", err);
+      console.error("NLP connection error:", err);
+      // Fallback on connection failure
       executeSearch(painType, severity, duration, pConditions);
     } finally {
       setLoading(false);

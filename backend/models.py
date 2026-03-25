@@ -31,6 +31,11 @@ class Drug(Base):
     tpsa = Column(Float, nullable=True)
     rotatable_bonds = Column(Integer, nullable=True)
     molar_refractivity = Column(Float, nullable=True)
+    
+    # Quantitative Sustainability & Cost
+    unit_price = Column(Float, default=1.0) # Estimated USD per standard unit (pill/vial)
+    default_course_days = Column(Integer, default=7) # Standard treatment duration
+    chemical_footprint_index = Column(Float, default=10.0) # Estimated mg of waste per g produced
 
 class Interaction(Base):
     __tablename__ = "interactions"
